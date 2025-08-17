@@ -1,0 +1,31 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Environment variables - MUST be set in Netlify dashboard
+# Go to: https://app.netlify.com/sites/lucent-sunshine-7a75a1/settings/deploys
+# Add these variables:
+# VITE_SUPABASE_URL = "https://your-project-id.supabase.co"
+# VITE_SUPABASE_ANON_KEY = "your-anon-key"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
