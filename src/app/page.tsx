@@ -317,8 +317,8 @@ export default function Home() {
           <a href="https://arsenio.at/" target="_blank" rel="noopener noreferrer" className="text-lg font-bold">
             arsenio<span className="text-pink-400">.at</span>
           </a>
-          <a href="#analyse" className="hidden sm:inline-flex items-center gap-2 bg-white/10 backdrop-blur text-white font-medium px-4 py-2 rounded-full text-sm hover:bg-white/20 transition-colors">
-            Jetzt analysieren
+          <a href="https://arsenio.at/kontakt" target="_blank" rel="noopener noreferrer" className="hidden sm:inline-flex items-center gap-2 bg-white/10 backdrop-blur text-white font-medium px-4 py-2 rounded-full text-sm hover:bg-white/20 transition-colors">
+            Kontakt
           </a>
         </header>
         <div className="container mx-auto px-4 py-16 md:py-24">
