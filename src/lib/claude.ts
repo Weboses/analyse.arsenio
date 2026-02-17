@@ -243,14 +243,8 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
 
   return `<div style="max-width:680px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1f2937;line-height:1.6;">
 
-  <!-- HEADER -->
-  <div style="background:linear-gradient(135deg,#1e1b4b 0%,#7c3aed 50%,#ec4899 100%);padding:40px 30px;border-radius:16px 16px 0 0;text-align:center;">
-    <h1 style="color:white;font-size:28px;margin:0 0 8px 0;font-weight:700;">Website-Analyse Report</h1>
-    <p style="color:rgba(255,255,255,0.8);margin:0;font-size:14px;">${data.websiteUrl}</p>
-  </div>
-
-  <!-- CONTENT -->
-  <div style="background:#ffffff;padding:30px;border:1px solid #e5e7eb;border-top:none;">
+  <!-- CONTENT - Header/Footer kommen von E-Mail-Wrapper (brevo.ts) -->
+  <div style="background:#ffffff;padding:30px;">
 
     <!-- GREETING & SUMMARY -->
     <p style="font-size:16px;margin:0 0 16px 0;">${aiContent.greeting}</p>
@@ -382,18 +376,14 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
       ${aiContent.conclusion}
     </p>
 
-  </div>
+    <!-- CTA BUTTON -->
+    <div style="text-align:center;padding:24px 0;margin-top:20px;border-top:1px solid #e5e7eb;">
+      <a href="https://calendly.com/office-arsenio/kosmetikstudio-termin" style="display:inline-block;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:white;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;">
+        Kostenloses Beratungsgespräch vereinbaren
+      </a>
+    </div>
 
-  <!-- FOOTER -->
-  <div style="background:#111827;padding:24px 30px;border-radius:0 0 16px 16px;text-align:center;">
-    <a href="https://calendly.com/office-arsenio/kosmetikstudio-termin" style="display:inline-block;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:white;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;">
-      Kostenloses Beratungsgespräch vereinbaren
-    </a>
-    <p style="color:#9ca3af;font-size:12px;margin:16px 0 0 0;">
-      arsenio.at | office@arsenio.at | +43 660 150 3210
-    </p>
   </div>
-
 </div>`;
 }
 
