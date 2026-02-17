@@ -93,9 +93,13 @@ export default function Home() {
   }, []);
 
   const validateUrl = (url: string): boolean => {
-    const trimmed = url.trim();
+    const trimmed = url.trim().toLowerCase();
+    if (!trimmed) return false;
+    // Remove protocol if present
     const withoutProtocol = trimmed.replace(/^https?:\/\//, "");
-    return /^(www\.)?[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}(\/.*)?$/.test(withoutProtocol);
+    // Simple check: must have at least one dot and some characters
+    // Accepts: example.com, www.example.com, sub.domain.co.at, etc.
+    return /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}(\/.*)?$/.test(withoutProtocol);
   };
 
   const validateForm = (): boolean => {
