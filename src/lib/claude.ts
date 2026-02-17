@@ -566,7 +566,7 @@ export async function generateAnalysisReport(data: AnalysisData): Promise<string
         `Sicherheits-Score: ${fallbackScores.security}/100`,
         `${data.scraped?.images?.missingAlt ?? 0} Bilder ohne Alt-Text`,
       ],
-      performanceAnalysis: `Die Ladezeit wurde gemessen: LCP ${((data.mobile?.coreWebVitals?.lcp ?? 0) / 1000).toFixed(1)}s, FCP ${((data.mobile?.coreWebVitals?.fcp ?? 0) / 1000).toFixed(1)}s. Mobile Score: ${fallbackScores.performance}, Desktop: ${data.desktop?.scores?.performance ?? 0}.`,
+      performanceAnalysis: `Die Ladezeit wurde gemessen: LCP ${(Number(data.mobile?.coreWebVitals?.lcp ?? 0) / 1000).toFixed(1)}s, FCP ${(Number(data.mobile?.coreWebVitals?.fcp ?? 0) / 1000).toFixed(1)}s. Mobile Score: ${fallbackScores.performance}, Desktop: ${data.desktop?.scores?.performance ?? 0}.`,
       seoAnalysis: `Title: "${data.scraped?.meta?.title ?? 'Nicht gesetzt'}" (${data.scraped?.meta?.titleLength ?? 0} Zeichen). ${data.scraped?.headings?.h1?.length ?? 0} H1-Tag(s) gefunden. Meta-Description: ${data.scraped?.meta?.descriptionLength ?? 0} Zeichen.`,
       securityAnalysis: `${data.scraped?.security?.isHttps ? 'HTTPS ist aktiv.' : 'HTTPS fehlt!'} Sicherheits-Score: ${fallbackScores.security}/100.`,
       recommendations: [
