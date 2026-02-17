@@ -112,34 +112,62 @@ WICHTIG:
 - Maximal 5-6 Empfehlungen, nach Priorität sortiert
 - Sei konkret und spezifisch (nutze die echten Zahlen)
 - Vermeide Fachjargon oder erkläre ihn
-- Gib NUR das JSON aus, keine Erklärungen`;
+- Gib NUR valides JSON aus, keine Erklärungen davor oder danach`;
 
-  const response = await getAnthropic().messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 2000,
-    messages: [{ role: "user", content: prompt }],
-  });
+  try {
+    const response = await getAnthropic().messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2000,
+      messages: [{ role: "user", content: prompt }],
+    });
 
-  const content = response.content[0];
-  if (content.type !== "text") {
-    throw new Error("Unexpected response from Claude");
+    const content = response.content[0];
+    if (content.type !== "text") {
+      throw new Error("Unexpected response from Claude");
+    }
+
+    // Parse JSON from response
+    let jsonText = content.text.trim();
+    console.log("Claude response length:", jsonText.length);
+
+    // Remove markdown code blocks if present
+    jsonText = jsonText.replace(/```json\n?/gi, "");
+    jsonText = jsonText.replace(/```\n?/gi, "");
+
+    // Find JSON object
+    const jsonStart = jsonText.indexOf("{");
+    const jsonEnd = jsonText.lastIndexOf("}");
+    if (jsonStart !== -1 && jsonEnd !== -1) {
+      jsonText = jsonText.slice(jsonStart, jsonEnd + 1);
+    }
+
+    return JSON.parse(jsonText) as AIContent;
+  } catch (error) {
+    console.error("Error generating AI content:", error);
+    // Return fallback content
+    return {
+      greeting: `Hallo ${data.clientName}!`,
+      summary: `Ihre Website ${data.websiteUrl} wurde analysiert. Die Gesamtnote ist ${summary.overallGrade}. Es gibt einige Optimierungsmöglichkeiten.`,
+      keyInsights: [
+        `Performance-Score: ${(summary.scores as Record<string, number>).performance}`,
+        `SEO-Score: ${(summary.scores as Record<string, number>).seo}`,
+        `Sicherheits-Score: ${(summary.scores as Record<string, number>).security}`,
+      ],
+      performanceAnalysis: "Die Ladezeit und Core Web Vitals wurden analysiert. Optimierungen können die Nutzererfahrung verbessern.",
+      seoAnalysis: "Die SEO-Grundlagen wurden geprüft. Title und Meta-Description sind wichtige Faktoren.",
+      securityAnalysis: "Die Sicherheit wurde überprüft. HTTPS ist essentiell für moderne Websites.",
+      recommendations: [
+        {
+          priority: "hoch",
+          title: "Performance optimieren",
+          description: "Bilder komprimieren und Ladezeiten verbessern.",
+          impact: "Bessere Nutzererfahrung und SEO-Rankings",
+        },
+      ],
+      positives: ["Website ist erreichbar", "Grundstruktur vorhanden"],
+      conclusion: "Gerne besprechen wir die Ergebnisse in einem kostenlosen Beratungsgespräch.",
+    };
   }
-
-  // Parse JSON from response
-  let jsonText = content.text.trim();
-
-  // Remove markdown code blocks if present
-  jsonText = jsonText.replace(/```json\n?/gi, "");
-  jsonText = jsonText.replace(/```\n?/gi, "");
-
-  // Find JSON object
-  const jsonStart = jsonText.indexOf("{");
-  const jsonEnd = jsonText.lastIndexOf("}");
-  if (jsonStart !== -1 && jsonEnd !== -1) {
-    jsonText = jsonText.slice(jsonStart, jsonEnd + 1);
-  }
-
-  return JSON.parse(jsonText) as AIContent;
 }
 
 function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Record<string, unknown>): string {
