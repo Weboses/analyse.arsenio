@@ -389,81 +389,101 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
 }
 
 export async function generateAnalysisReport(data: AnalysisData): Promise<string> {
-  const scores = {
-    performance: data.mobile.scores.performance,
-    seo: data.mobile.scores.seo,
-    security: data.securityHeaders.score,
-    accessibility: data.mobile.scores.accessibility,
-  };
+  try {
+    // Safely extract scores with defaults
+    const scores = {
+      performance: data.mobile?.scores?.performance ?? 0,
+      seo: data.mobile?.scores?.seo ?? 0,
+      security: data.securityHeaders?.score ?? 0,
+      accessibility: data.mobile?.scores?.accessibility ?? 0,
+    };
 
-  const overallGrade = getOverallGrade(scores);
+    const overallGrade = getOverallGrade(scores);
 
-  const summary = {
-    overallGrade,
-    grades: {
-      performance: getGrade(scores.performance),
-      seo: getGrade(scores.seo),
-      security: getGrade(scores.security),
-      accessibility: getGrade(scores.accessibility),
-    },
-    scores,
-    performance: {
-      mobile: data.mobile.scores.performance,
-      desktop: data.desktop.scores.performance,
-      lcp: data.mobile.coreWebVitals.lcp,
-      fcp: data.mobile.coreWebVitals.fcp,
-      cls: data.mobile.coreWebVitals.cls,
-      tbt: data.mobile.coreWebVitals.tbt,
-      speedIndex: data.mobile.coreWebVitals.speedIndex,
-    },
-    seoOnPage: {
-      title: data.scraped.meta.title,
-      titleLength: data.scraped.meta.titleLength,
-      description: data.scraped.meta.description?.slice(0, 160) || "",
-      descriptionLength: data.scraped.meta.descriptionLength,
-      h1: data.scraped.headings.h1[0] || "FEHLT",
-      h1Count: data.scraped.headings.h1.length,
-      h2Count: data.scraped.headings.h2.length,
-    },
-    images: {
-      total: data.scraped.images.total,
-      missingAlt: data.scraped.images.missingAlt,
-    },
-    links: {
-      internal: data.scraped.links.internal,
-      external: data.scraped.links.external,
-      broken: data.brokenLinks.filter((l) => l.type === "broken").length,
-    },
-    technical: {
-      isHttps: data.scraped.security.isHttps,
-      hasViewport: data.scraped.technical.hasViewport,
-      cms: data.scraped.technical.detectedCms,
-      hasSitemap: data.robotsSitemap.hasSitemap,
-      hasRobotsTxt: data.robotsSitemap.hasRobotsTxt,
-    },
-    security: {
-      score: data.securityHeaders.score,
-      issues: data.securityHeaders.issues.slice(0, 3),
-    },
-    seoAnalysis: data.seoAnalysis
-      ? {
-          domainRank: data.seoAnalysis.domainMetrics.domainRank,
-          organicKeywords: data.seoAnalysis.domainMetrics.organicKeywords,
-          backlinks: data.seoAnalysis.backlinks.totalBacklinks,
-          referringDomains: data.seoAnalysis.backlinks.referringDomains,
-          rankings: data.seoAnalysis.rankings.slice(0, 10).map((r) => ({
-            keyword: r.keyword,
-            position: r.position,
-            searchVolume: r.searchVolume,
-          })),
-        }
-      : null,
-    extractedKeywords: data.extractedKeywords?.slice(0, 5) || [],
-  };
+    const summary = {
+      overallGrade,
+      grades: {
+        performance: getGrade(scores.performance),
+        seo: getGrade(scores.seo),
+        security: getGrade(scores.security),
+        accessibility: getGrade(scores.accessibility),
+      },
+      scores,
+      performance: {
+        mobile: data.mobile?.scores?.performance ?? 0,
+        desktop: data.desktop?.scores?.performance ?? 0,
+        lcp: data.mobile?.coreWebVitals?.lcp ?? 0,
+        fcp: data.mobile?.coreWebVitals?.fcp ?? 0,
+        cls: data.mobile?.coreWebVitals?.cls ?? 0,
+        tbt: data.mobile?.coreWebVitals?.tbt ?? 0,
+        speedIndex: data.mobile?.coreWebVitals?.speedIndex ?? 0,
+      },
+      seoOnPage: {
+        title: data.scraped?.meta?.title ?? "Nicht verfügbar",
+        titleLength: data.scraped?.meta?.titleLength ?? 0,
+        description: data.scraped?.meta?.description?.slice(0, 160) ?? "",
+        descriptionLength: data.scraped?.meta?.descriptionLength ?? 0,
+        h1: data.scraped?.headings?.h1?.[0] ?? "FEHLT",
+        h1Count: data.scraped?.headings?.h1?.length ?? 0,
+        h2Count: data.scraped?.headings?.h2?.length ?? 0,
+      },
+      images: {
+        total: data.scraped?.images?.total ?? 0,
+        missingAlt: data.scraped?.images?.missingAlt ?? 0,
+      },
+      links: {
+        internal: data.scraped?.links?.internal ?? 0,
+        external: data.scraped?.links?.external ?? 0,
+        broken: data.brokenLinks?.filter((l) => l.type === "broken")?.length ?? 0,
+      },
+      technical: {
+        isHttps: data.scraped?.security?.isHttps ?? false,
+        hasViewport: data.scraped?.technical?.hasViewport ?? false,
+        cms: data.scraped?.technical?.detectedCms ?? null,
+        hasSitemap: data.robotsSitemap?.hasSitemap ?? false,
+        hasRobotsTxt: data.robotsSitemap?.hasRobotsTxt ?? false,
+      },
+      security: {
+        score: data.securityHeaders?.score ?? 0,
+        issues: data.securityHeaders?.issues?.slice(0, 3) ?? [],
+      },
+      seoAnalysis: data.seoAnalysis
+        ? {
+            domainRank: data.seoAnalysis.domainMetrics?.domainRank ?? 0,
+            organicKeywords: data.seoAnalysis.domainMetrics?.organicKeywords ?? 0,
+            backlinks: data.seoAnalysis.backlinks?.totalBacklinks ?? 0,
+            referringDomains: data.seoAnalysis.backlinks?.referringDomains ?? 0,
+            rankings: (data.seoAnalysis.rankings ?? []).slice(0, 10).map((r) => ({
+              keyword: r.keyword ?? "",
+              position: r.position,
+              searchVolume: r.searchVolume ?? 0,
+            })),
+          }
+        : null,
+      extractedKeywords: data.extractedKeywords?.slice(0, 5) ?? [],
+    };
 
-  console.log("Generating AI content...");
-  const aiContent = await generateAIContent(data, summary);
-  console.log("AI content generated, building HTML...");
+    console.log("Generating AI content...");
+    const aiContent = await generateAIContent(data, summary);
+    console.log("AI content generated, building HTML...");
 
-  return buildHTMLReport(data, aiContent, summary);
+    return buildHTMLReport(data, aiContent, summary);
+  } catch (error) {
+    console.error("Error in generateAnalysisReport:", error);
+    // Return a simple fallback HTML report
+    return `<div style="max-width:680px;margin:0 auto;font-family:sans-serif;padding:20px;">
+      <h1 style="color:#7c3aed;">Website-Analyse Report</h1>
+      <p>Hallo ${data.clientName},</p>
+      <p>Ihre Website <strong>${data.websiteUrl}</strong> wurde analysiert.</p>
+      <div style="background:#f3f4f6;padding:20px;border-radius:8px;margin:20px 0;">
+        <h3>Scores:</h3>
+        <p>Performance: ${data.mobile?.scores?.performance ?? "N/A"}</p>
+        <p>SEO: ${data.mobile?.scores?.seo ?? "N/A"}</p>
+        <p>Sicherheit: ${data.securityHeaders?.score ?? "N/A"}</p>
+      </div>
+      <p>Für eine detaillierte Analyse kontaktieren Sie uns gerne.</p>
+      <a href="https://calendly.com/arsenio-at" style="display:inline-block;background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;">Beratungsgespräch vereinbaren</a>
+      <p style="margin-top:20px;color:#6b7280;font-size:12px;">arsenio.at | office@arsenio.at</p>
+    </div>`;
+  }
 }
