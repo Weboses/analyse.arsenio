@@ -386,7 +386,7 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
 
   <!-- FOOTER -->
   <div style="background:#111827;padding:24px 30px;border-radius:0 0 16px 16px;text-align:center;">
-    <a href="https://calendly.com/arsenio-at" style="display:inline-block;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:white;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;">
+    <a href="https://calendly.com/office-arsenio/kosmetikstudio-termin" style="display:inline-block;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:white;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;">
       Kostenloses Beratungsgespräch vereinbaren
     </a>
     <p style="color:#9ca3af;font-size:12px;margin:16px 0 0 0;">
@@ -483,20 +483,120 @@ export async function generateAnalysisReport(data: AnalysisData): Promise<string
   } catch (error) {
     console.error("CRITICAL Error in generateAnalysisReport:", error);
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
-    // Return a simple fallback HTML report
-    return `<div style="max-width:680px;margin:0 auto;font-family:sans-serif;padding:20px;">
-      <h1 style="color:#7c3aed;">Website-Analyse Report</h1>
-      <p>Hallo ${data.clientName},</p>
-      <p>Ihre Website <strong>${data.websiteUrl}</strong> wurde analysiert.</p>
-      <div style="background:#f3f4f6;padding:20px;border-radius:8px;margin:20px 0;">
-        <h3>Scores:</h3>
-        <p>Performance: ${data.mobile?.scores?.performance ?? "N/A"}</p>
-        <p>SEO: ${data.mobile?.scores?.seo ?? "N/A"}</p>
-        <p>Sicherheit: ${data.securityHeaders?.score ?? "N/A"}</p>
-      </div>
-      <p>Für eine detaillierte Analyse kontaktieren Sie uns gerne.</p>
-      <a href="https://calendly.com/arsenio-at" style="display:inline-block;background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;">Beratungsgespräch vereinbaren</a>
-      <p style="margin-top:20px;color:#6b7280;font-size:12px;">arsenio.at | office@arsenio.at</p>
-    </div>`;
+
+    // Create fallback scores safely
+    const fallbackScores = {
+      performance: data.mobile?.scores?.performance ?? 0,
+      seo: data.mobile?.scores?.seo ?? 0,
+      security: data.securityHeaders?.score ?? 0,
+      accessibility: data.mobile?.scores?.accessibility ?? 0,
+    };
+
+    // Create complete fallback summary
+    const fallbackSummary = {
+      overallGrade: getOverallGrade(fallbackScores),
+      grades: {
+        performance: getGrade(fallbackScores.performance),
+        seo: getGrade(fallbackScores.seo),
+        security: getGrade(fallbackScores.security),
+        accessibility: getGrade(fallbackScores.accessibility),
+      },
+      scores: fallbackScores,
+      performance: {
+        mobile: data.mobile?.scores?.performance ?? 0,
+        desktop: data.desktop?.scores?.performance ?? 0,
+        lcp: data.mobile?.coreWebVitals?.lcp ?? 0,
+        fcp: data.mobile?.coreWebVitals?.fcp ?? 0,
+        cls: data.mobile?.coreWebVitals?.cls ?? 0,
+        tbt: data.mobile?.coreWebVitals?.tbt ?? 0,
+        speedIndex: data.mobile?.coreWebVitals?.speedIndex ?? 0,
+      },
+      seoOnPage: {
+        title: data.scraped?.meta?.title ?? "Nicht verfügbar",
+        titleLength: data.scraped?.meta?.titleLength ?? 0,
+        description: data.scraped?.meta?.description?.slice(0, 160) ?? "",
+        descriptionLength: data.scraped?.meta?.descriptionLength ?? 0,
+        h1: data.scraped?.headings?.h1?.[0] ?? "FEHLT",
+        h1Count: data.scraped?.headings?.h1?.length ?? 0,
+        h2Count: data.scraped?.headings?.h2?.length ?? 0,
+      },
+      images: {
+        total: data.scraped?.images?.total ?? 0,
+        missingAlt: data.scraped?.images?.missingAlt ?? 0,
+      },
+      links: {
+        internal: data.scraped?.links?.internal ?? 0,
+        external: data.scraped?.links?.external ?? 0,
+        broken: data.brokenLinks?.filter((l) => l.type === "broken")?.length ?? 0,
+      },
+      technical: {
+        isHttps: data.scraped?.security?.isHttps ?? false,
+        hasViewport: data.scraped?.technical?.hasViewport ?? false,
+        cms: data.scraped?.technical?.detectedCms ?? null,
+        hasSitemap: data.robotsSitemap?.hasSitemap ?? false,
+        hasRobotsTxt: data.robotsSitemap?.hasRobotsTxt ?? false,
+      },
+      security: {
+        score: data.securityHeaders?.score ?? 0,
+        issues: data.securityHeaders?.issues?.slice(0, 3) ?? [],
+      },
+      seoAnalysis: data.seoAnalysis
+        ? {
+            domainRank: data.seoAnalysis.domainMetrics?.domainRank ?? 0,
+            organicKeywords: data.seoAnalysis.domainMetrics?.organicKeywords ?? 0,
+            backlinks: data.seoAnalysis.backlinks?.totalBacklinks ?? 0,
+            referringDomains: data.seoAnalysis.backlinks?.referringDomains ?? 0,
+            rankings: (data.seoAnalysis.rankings ?? []).slice(0, 10).map((r) => ({
+              keyword: r.keyword ?? "",
+              position: r.position,
+              searchVolume: r.searchVolume ?? 0,
+            })),
+          }
+        : null,
+      extractedKeywords: data.extractedKeywords?.slice(0, 5) ?? [],
+    };
+
+    // FALLBACK: Build report WITHOUT AI - just show all the data directly
+    const fallbackAIContent: AIContent = {
+      greeting: `Hallo ${data.clientName}!`,
+      summary: `Ihre Website ${data.websiteUrl} wurde umfassend analysiert. Hier sind die Ergebnisse.`,
+      keyInsights: [
+        `Performance-Score: ${fallbackScores.performance}/100`,
+        `SEO-Score: ${fallbackScores.seo}/100`,
+        `Sicherheits-Score: ${fallbackScores.security}/100`,
+        `${data.scraped?.images?.missingAlt ?? 0} Bilder ohne Alt-Text`,
+      ],
+      performanceAnalysis: `Die Ladezeit wurde gemessen: LCP ${((data.mobile?.coreWebVitals?.lcp ?? 0) / 1000).toFixed(1)}s, FCP ${((data.mobile?.coreWebVitals?.fcp ?? 0) / 1000).toFixed(1)}s. Mobile Score: ${fallbackScores.performance}, Desktop: ${data.desktop?.scores?.performance ?? 0}.`,
+      seoAnalysis: `Title: "${data.scraped?.meta?.title ?? 'Nicht gesetzt'}" (${data.scraped?.meta?.titleLength ?? 0} Zeichen). ${data.scraped?.headings?.h1?.length ?? 0} H1-Tag(s) gefunden. Meta-Description: ${data.scraped?.meta?.descriptionLength ?? 0} Zeichen.`,
+      securityAnalysis: `${data.scraped?.security?.isHttps ? 'HTTPS ist aktiv.' : 'HTTPS fehlt!'} Sicherheits-Score: ${fallbackScores.security}/100.`,
+      recommendations: [
+        {
+          priority: fallbackScores.performance < 50 ? "kritisch" : "hoch",
+          title: "Performance verbessern",
+          description: "Bilder optimieren, Caching aktivieren, Code minimieren.",
+          impact: "Bessere Nutzererfahrung und Google-Rankings"
+        },
+        {
+          priority: (data.scraped?.images?.missingAlt ?? 0) > 3 ? "hoch" : "mittel",
+          title: "Alt-Texte für Bilder",
+          description: `${data.scraped?.images?.missingAlt ?? 0} von ${data.scraped?.images?.total ?? 0} Bildern haben keinen Alt-Text.`,
+          impact: "Bessere SEO und Barrierefreiheit"
+        },
+        {
+          priority: !data.scraped?.security?.isHttps ? "kritisch" : "mittel",
+          title: data.scraped?.security?.isHttps ? "Sicherheit optimieren" : "HTTPS aktivieren",
+          description: data.scraped?.security?.isHttps ? "Security Headers überprüfen." : "SSL-Zertifikat einrichten.",
+          impact: "Vertrauen und Sicherheit"
+        }
+      ],
+      positives: [
+        fallbackScores.seo >= 80 ? "Guter SEO-Score" : "Website ist erreichbar",
+        data.scraped?.technical?.hasViewport ? "Mobile-optimiert" : "Grundstruktur vorhanden",
+      ],
+      conclusion: "Für eine detaillierte Besprechung stehen wir Ihnen gerne zur Verfügung."
+    };
+
+    // Build report with fallback content but FULL data
+    return buildHTMLReport(data, fallbackAIContent, fallbackSummary);
   }
 }
