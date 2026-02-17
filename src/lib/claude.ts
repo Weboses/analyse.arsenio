@@ -115,20 +115,24 @@ WICHTIG:
 - Gib NUR valides JSON aus, keine Erklärungen davor oder danach`;
 
   try {
+    console.log("Calling Claude API...");
     const response = await getAnthropic().messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 2000,
       messages: [{ role: "user", content: prompt }],
     });
+    console.log("Claude API response received");
 
     const content = response.content[0];
     if (content.type !== "text") {
+      console.error("Unexpected content type:", content.type);
       throw new Error("Unexpected response from Claude");
     }
 
     // Parse JSON from response
     let jsonText = content.text.trim();
-    console.log("Claude response length:", jsonText.length);
+    console.log("Claude response length:", jsonText.length, "chars");
+    console.log("Claude response preview:", jsonText.substring(0, 200));
 
     // Remove markdown code blocks if present
     jsonText = jsonText.replace(/```json\n?/gi, "");
@@ -137,13 +141,18 @@ WICHTIG:
     // Find JSON object
     const jsonStart = jsonText.indexOf("{");
     const jsonEnd = jsonText.lastIndexOf("}");
-    if (jsonStart !== -1 && jsonEnd !== -1) {
-      jsonText = jsonText.slice(jsonStart, jsonEnd + 1);
+    if (jsonStart === -1 || jsonEnd === -1) {
+      console.error("No JSON found in response:", jsonText.substring(0, 500));
+      throw new Error("No JSON found in Claude response");
     }
+    jsonText = jsonText.slice(jsonStart, jsonEnd + 1);
 
-    return JSON.parse(jsonText) as AIContent;
+    const parsed = JSON.parse(jsonText) as AIContent;
+    console.log("JSON parsed successfully, keys:", Object.keys(parsed));
+    return parsed;
   } catch (error) {
     console.error("Error generating AI content:", error);
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
     // Return fallback content
     return {
       greeting: `Hallo ${data.clientName}!`,
@@ -463,13 +472,17 @@ export async function generateAnalysisReport(data: AnalysisData): Promise<string
       extractedKeywords: data.extractedKeywords?.slice(0, 5) ?? [],
     };
 
-    console.log("Generating AI content...");
+    console.log("Generating AI content for", data.websiteUrl);
+    console.log("Summary scores:", JSON.stringify(summary.scores));
     const aiContent = await generateAIContent(data, summary);
-    console.log("AI content generated, building HTML...");
+    console.log("AI content generated successfully, building HTML...");
 
-    return buildHTMLReport(data, aiContent, summary);
+    const html = buildHTMLReport(data, aiContent, summary);
+    console.log("HTML report built, length:", html.length);
+    return html;
   } catch (error) {
-    console.error("Error in generateAnalysisReport:", error);
+    console.error("CRITICAL Error in generateAnalysisReport:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
     // Return a simple fallback HTML report
     return `<div style="max-width:680px;margin:0 auto;font-family:sans-serif;padding:20px;">
       <h1 style="color:#7c3aed;">Website-Analyse Report</h1>
