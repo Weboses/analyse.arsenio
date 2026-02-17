@@ -528,19 +528,18 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
 export async function checkBrokenLinks(
   links: Array<{ href: string; isExternal: boolean }>,
   baseUrl: string,
-  limit = 20
+  limit = 8
 ): Promise<Array<{ url: string; status: number | string; type: string }>> {
-  const results: Array<{ url: string; status: number | string; type: string }> =
-    [];
   const linksToCheck = links.slice(0, limit);
 
-  for (const link of linksToCheck) {
+  // Run all checks in parallel for speed (max ~3 seconds total instead of 40+)
+  const checkPromises = linksToCheck.map(async (link) => {
     let fullUrl = link.href;
     if (!fullUrl.startsWith("http")) {
       try {
         fullUrl = new URL(link.href, baseUrl).toString();
       } catch {
-        continue;
+        return null;
       }
     }
 
@@ -548,24 +547,22 @@ export async function checkBrokenLinks(
       const response = await fetch(fullUrl, {
         method: "HEAD",
         redirect: "follow",
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(3000),
       });
 
       if (response.status >= 400) {
-        results.push({ url: fullUrl, status: response.status, type: "broken" });
+        return { url: fullUrl, status: response.status, type: "broken" };
       } else if (response.redirected) {
-        results.push({
-          url: fullUrl,
-          status: response.status,
-          type: "redirect",
-        });
+        return { url: fullUrl, status: response.status, type: "redirect" };
       }
+      return null;
     } catch {
-      results.push({ url: fullUrl, status: "Timeout", type: "timeout" });
+      return { url: fullUrl, status: "Timeout", type: "timeout" };
     }
-  }
+  });
 
-  return results;
+  const results = await Promise.all(checkPromises);
+  return results.filter((r) => r !== null) as { url: string; status: number | string; type: string }[];
 }
 
 // Check robots.txt and sitemap.xml

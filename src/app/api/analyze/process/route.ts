@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     const brokenLinks = await checkBrokenLinks(
       scrapedData.links.allLinks,
       websiteUrl,
-      20
+      8  // Reduced from 20 to stay within timeout
     );
 
     // ============================================
