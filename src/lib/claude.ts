@@ -301,15 +301,15 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
       <div style="display:flex;flex-wrap:wrap;gap:12px;">
         <div style="flex:1;min-width:120px;background:#f9fafb;padding:12px;border-radius:8px;text-align:center;">
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">LCP</div>
-          <div style="font-size:18px;font-weight:600;color:${(performance.lcp as number) <= 2500 ? "#10b981" : (performance.lcp as number) <= 4000 ? "#f59e0b" : "#ef4444"};">${((performance.lcp as number) / 1000).toFixed(1)}s</div>
+          <div style="font-size:18px;font-weight:600;color:${Number(performance.lcp ?? 0) <= 2500 ? "#10b981" : Number(performance.lcp ?? 0) <= 4000 ? "#f59e0b" : "#ef4444"};">${(Number(performance.lcp ?? 0) / 1000).toFixed(1)}s</div>
         </div>
         <div style="flex:1;min-width:120px;background:#f9fafb;padding:12px;border-radius:8px;text-align:center;">
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">FCP</div>
-          <div style="font-size:18px;font-weight:600;color:${(performance.fcp as number) <= 1800 ? "#10b981" : (performance.fcp as number) <= 3000 ? "#f59e0b" : "#ef4444"};">${((performance.fcp as number) / 1000).toFixed(1)}s</div>
+          <div style="font-size:18px;font-weight:600;color:${Number(performance.fcp ?? 0) <= 1800 ? "#10b981" : Number(performance.fcp ?? 0) <= 3000 ? "#f59e0b" : "#ef4444"};">${(Number(performance.fcp ?? 0) / 1000).toFixed(1)}s</div>
         </div>
         <div style="flex:1;min-width:120px;background:#f9fafb;padding:12px;border-radius:8px;text-align:center;">
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">CLS</div>
-          <div style="font-size:18px;font-weight:600;color:${(performance.cls as number) <= 0.1 ? "#10b981" : (performance.cls as number) <= 0.25 ? "#f59e0b" : "#ef4444"};">${(performance.cls as number).toFixed(3)}</div>
+          <div style="font-size:18px;font-weight:600;color:${Number(performance.cls ?? 0) <= 0.1 ? "#10b981" : Number(performance.cls ?? 0) <= 0.25 ? "#f59e0b" : "#ef4444"};">${Number(performance.cls ?? 0).toFixed(3)}</div>
         </div>
         <div style="flex:1;min-width:120px;background:#f9fafb;padding:12px;border-radius:8px;text-align:center;">
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Mobile</div>
