@@ -246,6 +246,12 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
   <!-- CONTENT - Header/Footer kommen von E-Mail-Wrapper (brevo.ts) -->
   <div style="background:#ffffff;padding:30px;">
 
+    <!-- WEBSITE URL - prominent display -->
+    <div style="text-align:center;margin-bottom:24px;padding:16px;background:#f3f4f6;border-radius:8px;">
+      <p style="margin:0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Analyse für</p>
+      <p style="margin:4px 0 0 0;font-size:18px;font-weight:600;color:#1f2937;">${data.websiteUrl}</p>
+    </div>
+
     <!-- GREETING & SUMMARY -->
     <p style="font-size:16px;margin:0 0 16px 0;">${aiContent.greeting}</p>
     <p style="font-size:15px;color:#4b5563;margin:0 0 24px 0;">${aiContent.summary}</p>

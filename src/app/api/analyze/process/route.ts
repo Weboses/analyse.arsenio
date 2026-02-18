@@ -201,10 +201,13 @@ export async function POST(request: NextRequest) {
     await updateLeadStatus(leadId, "sending_email");
     console.log(`[${leadId}] Step 6: Sending email...`);
 
+    // Extract domain for clearer email subject
+    const domain = new URL(websiteUrl).hostname.replace(/^www\./, "");
+
     const emailSent = await sendAnalysisEmail({
       to: lead.email,
       toName: lead.firstName,
-      subject: `${lead.firstName}, Ihre Website-Analyse ist fertig!`,
+      subject: `${lead.firstName}, Analyse für ${domain} ist fertig!`,
       htmlContent: htmlReport,
     });
 

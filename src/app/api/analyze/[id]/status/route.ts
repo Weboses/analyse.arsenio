@@ -79,6 +79,11 @@ export async function GET(
       scores,
       websiteUrl: lead.websiteUrl,
       firstName: lead.firstName,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+      }
     });
   } catch (error) {
     console.error("Status check error:", error);
