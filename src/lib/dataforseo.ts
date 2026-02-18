@@ -476,7 +476,11 @@ export async function runComprehensiveAnalysis(
 ): Promise<ComprehensiveAnalysis> {
   const domain = new URL(url).hostname.replace(/^www\./, "");
 
-  console.log(`[DataForSEO] Starting comprehensive analysis for ${domain}`);
+  console.log(`[DataForSEO] =================================`);
+  console.log(`[DataForSEO] URL received: ${url}`);
+  console.log(`[DataForSEO] Domain extracted: ${domain}`);
+  console.log(`[DataForSEO] Scraped keywords: ${scrapedKeywords.join(", ")}`);
+  console.log(`[DataForSEO] =================================`);
 
   // Extract location from domain (simple heuristic)
   const location = domain.endsWith(".at") ? "Austria" : domain.endsWith(".de") ? "Germany" : "Austria";
@@ -509,6 +513,10 @@ export async function runComprehensiveAnalysis(
     const kd = keywordData.find(k => k.keyword.toLowerCase() === r.keyword.toLowerCase());
     return { ...r, searchVolume: kd?.searchVolume || r.searchVolume };
   });
+
+  console.log(`[DataForSEO] Analysis complete for domain: ${domain}`);
+  console.log(`[DataForSEO] Ranked keywords found: ${rankedKeywords.length}`);
+  console.log(`[DataForSEO] Top 3 rankings:`, enrichedRankings.slice(0, 3).map(r => `${r.keyword}: #${r.position}`));
 
   return {
     domain,

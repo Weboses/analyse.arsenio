@@ -462,8 +462,14 @@ export async function generateAnalysisReport(data: AnalysisData): Promise<string
       extractedKeywords: data.extractedKeywords?.slice(0, 5) ?? [],
     };
 
-    console.log("Generating AI content for", data.websiteUrl);
+    console.log("=== REPORT DEBUG ===");
+    console.log("Website URL:", data.websiteUrl);
+    console.log("Client Name:", data.clientName);
     console.log("Summary scores:", JSON.stringify(summary.scores));
+    console.log("SEO Title:", summary.seoOnPage.title);
+    console.log("Rankings:", JSON.stringify(summary.seoAnalysis?.rankings?.slice(0, 3)));
+    console.log("Extracted Keywords:", summary.extractedKeywords);
+    console.log("===================");
     const aiContent = await generateAIContent(data, summary);
     console.log("AI content generated successfully, building HTML...");
 
