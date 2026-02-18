@@ -226,10 +226,12 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
   let rankingsHTML = "";
   if (seoAnalysisData) {
     const rankings = seoAnalysisData.rankings as Array<{ keyword: string; position: number | null; searchVolume: number }>;
+    const analyzedDomain = (seoAnalysisData as Record<string, unknown>).domain as string || "N/A";
     if (rankings && rankings.length > 0) {
       rankingsHTML = `
         <div style="margin-top:20px;">
-          <h3 style="font-size:16px;color:#1f2937;margin:0 0 12px 0;">🔍 Aktuelle Google Rankings</h3>
+          <h3 style="font-size:16px;color:#1f2937;margin:0 0 8px 0;">🔍 Aktuelle Google Rankings</h3>
+          <p style="font-size:12px;color:#6b7280;margin:0 0 12px 0;">Analysierte Domain: <strong>${analyzedDomain}</strong></p>
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <tr style="background:#f3f4f6;">
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Keyword</th>
@@ -461,6 +463,7 @@ export async function generateAnalysisReport(data: AnalysisData): Promise<string
       },
       seoAnalysis: data.seoAnalysis
         ? {
+            domain: data.seoAnalysis.domain ?? "N/A",
             domainRank: data.seoAnalysis.domainMetrics?.domainRank ?? 0,
             organicKeywords: data.seoAnalysis.domainMetrics?.organicKeywords ?? 0,
             backlinks: data.seoAnalysis.backlinks?.totalBacklinks ?? 0,
@@ -480,6 +483,7 @@ export async function generateAnalysisReport(data: AnalysisData): Promise<string
     console.log("Client Name:", data.clientName);
     console.log("Summary scores:", JSON.stringify(summary.scores));
     console.log("SEO Title:", summary.seoOnPage.title);
+    console.log("SEO Analysis Domain:", summary.seoAnalysis?.domain);
     console.log("Rankings:", JSON.stringify(summary.seoAnalysis?.rankings?.slice(0, 3)));
     console.log("Extracted Keywords:", summary.extractedKeywords);
     console.log("===================");
@@ -551,6 +555,7 @@ export async function generateAnalysisReport(data: AnalysisData): Promise<string
       },
       seoAnalysis: data.seoAnalysis
         ? {
+            domain: data.seoAnalysis.domain ?? "N/A",
             domainRank: data.seoAnalysis.domainMetrics?.domainRank ?? 0,
             organicKeywords: data.seoAnalysis.domainMetrics?.organicKeywords ?? 0,
             backlinks: data.seoAnalysis.backlinks?.totalBacklinks ?? 0,

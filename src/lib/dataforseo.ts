@@ -367,10 +367,24 @@ export async function getRankedKeywords(domain: string, limit: number = 20): Pro
       searchVolume: item.keyword_data?.keyword_info?.search_volume || 0,
     }));
 
-    console.log(`[DataForSEO getRankedKeywords] Parsed results:`, JSON.stringify(results.slice(0, 5)));
+    // Filter to only include results where the URL matches the target domain
+    const filteredResults = results.filter((r) => {
+      if (!r.url) return false;
+      try {
+        const urlDomain = new URL(r.url).hostname.replace(/^www\./, "").toLowerCase();
+        const targetDomain = domain.toLowerCase();
+        return urlDomain === targetDomain || urlDomain.endsWith("." + targetDomain);
+      } catch {
+        return false;
+      }
+    });
+
+    console.log(`[DataForSEO getRankedKeywords] Parsed results: ${results.length}`);
+    console.log(`[DataForSEO getRankedKeywords] Filtered results (matching domain): ${filteredResults.length}`);
+    console.log(`[DataForSEO getRankedKeywords] Top 5 filtered:`, JSON.stringify(filteredResults.slice(0, 5)));
     console.log(`[DataForSEO getRankedKeywords] ===========================`);
 
-    return results;
+    return filteredResults;
   } catch (error) {
     console.error("Ranked Keywords Error:", error);
     return [];
