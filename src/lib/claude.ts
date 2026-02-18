@@ -234,7 +234,7 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
       r.position !== null && r.position <= 50 && r.searchVolume >= 50
     ) || [];
 
-    // Only show if we have at least 2 relevant keywords (to avoid showing just random client names)
+    // Show rankings if we have relevant keywords, otherwise show opportunity message
     if (relevantRankings.length >= 2) {
       rankingsHTML = `
         <div style="margin-top:20px;">
@@ -254,6 +254,19 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
               </tr>
             `).join("")}
           </table>
+        </div>`;
+    } else {
+      // No rankings found - show opportunity message
+      rankingsHTML = `
+        <div style="margin-top:20px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:16px;">
+          <h3 style="font-size:16px;color:#92400e;margin:0 0 8px 0;">⚠️ Keine Google Rankings gefunden</h3>
+          <p style="font-size:14px;color:#78350f;margin:0 0 12px 0;">
+            Ihre Website <strong>${analyzedDomain}</strong> rankt derzeit für keine relevanten Keywords in den Top 50 bei Google Österreich.
+          </p>
+          <p style="font-size:13px;color:#92400e;margin:0;">
+            <strong>Das bedeutet:</strong> Potenzielle Kunden, die nach Ihren Dienstleistungen suchen, finden Sie nicht über Google.
+            Mit gezielter SEO-Optimierung können Sie das ändern und mehr Kunden erreichen.
+          </p>
         </div>`;
     }
   }
