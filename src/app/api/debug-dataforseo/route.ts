@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
         totalBacklinks: backlinksData.tasks?.[0]?.result?.[0]?.backlinks,
         referringDomains: backlinksData.tasks?.[0]?.result?.[0]?.referring_domains,
         rank: backlinksData.tasks?.[0]?.result?.[0]?.rank,
+        rawResult: backlinksData.tasks?.[0]?.result?.[0],
       },
     });
   } catch (error) {

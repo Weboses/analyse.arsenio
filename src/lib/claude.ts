@@ -223,22 +223,30 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
     .join("");
 
   // Rankings HTML (if DataForSEO available)
+  // Only show rankings if there are multiple keywords or if keywords seem relevant
   let rankingsHTML = "";
   if (seoAnalysisData) {
     const rankings = seoAnalysisData.rankings as Array<{ keyword: string; position: number | null; searchVolume: number }>;
     const analyzedDomain = (seoAnalysisData as Record<string, unknown>).domain as string || "N/A";
-    if (rankings && rankings.length > 0) {
+
+    // Filter: Only show rankings with meaningful search volume (>50) and good positions (<50)
+    const relevantRankings = rankings?.filter(r =>
+      r.position !== null && r.position <= 50 && r.searchVolume >= 50
+    ) || [];
+
+    // Only show if we have at least 2 relevant keywords (to avoid showing just random client names)
+    if (relevantRankings.length >= 2) {
       rankingsHTML = `
         <div style="margin-top:20px;">
           <h3 style="font-size:16px;color:#1f2937;margin:0 0 8px 0;">🔍 Aktuelle Google Rankings</h3>
-          <p style="font-size:12px;color:#6b7280;margin:0 0 12px 0;">Analysierte Domain: <strong>${analyzedDomain}</strong></p>
+          <p style="font-size:12px;color:#6b7280;margin:0 0 12px 0;">Keywords für die <strong>${analyzedDomain}</strong> in Google rankt:</p>
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <tr style="background:#f3f4f6;">
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Keyword</th>
               <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Position</th>
               <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Suchvolumen</th>
             </tr>
-            ${rankings.slice(0, 5).map((r) => `
+            ${relevantRankings.slice(0, 5).map((r) => `
               <tr>
                 <td style="padding:8px;border-bottom:1px solid #f3f4f6;">${r.keyword}</td>
                 <td style="text-align:center;padding:8px;border-bottom:1px solid #f3f4f6;font-weight:600;color:${r.position && r.position <= 10 ? "#10b981" : r.position && r.position <= 30 ? "#f59e0b" : "#6b7280"};">${r.position || ">100"}</td>
