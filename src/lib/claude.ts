@@ -276,10 +276,15 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
   <!-- CONTENT - Header/Footer kommen von E-Mail-Wrapper (brevo.ts) -->
   <div style="background:#ffffff;padding:30px;">
 
-    <!-- WEBSITE URL - prominent display -->
+    <!-- WEBSITE URL + SCREENSHOT -->
     <div style="text-align:center;margin-bottom:24px;padding:16px;background:#f3f4f6;border-radius:8px;">
       <p style="margin:0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Analyse für</p>
       <p style="margin:4px 0 0 0;font-size:18px;font-weight:600;color:#1f2937;">${data.websiteUrl}</p>
+      ${(summary as Record<string, unknown>).screenshot ? `
+      <div style="margin-top:16px;">
+        <img src="${(summary as Record<string, unknown>).screenshot}" alt="Screenshot von ${data.websiteUrl}" style="max-width:100%;border-radius:8px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,0.1);" />
+      </div>
+      ` : ""}
     </div>
 
     <!-- GREETING & SUMMARY -->
@@ -393,6 +398,219 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
       </div>
     </div>
 
+    <!-- CONTENT ANALYSIS - NEW -->
+    <div style="margin-bottom:32px;">
+      <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">📝 Content-Analyse</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div style="flex:1;min-width:140px;background:#f9fafb;padding:16px;border-radius:8px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:${(summary.content as {wordCount: number}).wordCount >= 300 ? "#10b981" : (summary.content as {wordCount: number}).wordCount >= 150 ? "#f59e0b" : "#ef4444"};">${(summary.content as {wordCount: number}).wordCount}</div>
+          <div style="font-size:12px;color:#6b7280;">Wörter</div>
+          <div style="font-size:11px;color:${(summary.content as {wordCount: number}).wordCount >= 300 ? "#10b981" : "#f59e0b"};">${(summary.content as {wordCount: number}).wordCount >= 300 ? "✓ Gut" : (summary.content as {wordCount: number}).wordCount >= 150 ? "⚠ Könnte mehr sein" : "✗ Zu wenig"}</div>
+        </div>
+        <div style="flex:1;min-width:140px;background:#f9fafb;padding:16px;border-radius:8px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:#6b7280;">${(summary.content as {readingTime: number}).readingTime}</div>
+          <div style="font-size:12px;color:#6b7280;">Min. Lesezeit</div>
+        </div>
+        <div style="flex:1;min-width:140px;background:#f9fafb;padding:16px;border-radius:8px;text-align:center;">
+          <div style="font-size:24px;font-weight:700;color:#6b7280;">${(summary.pageMetrics as {totalRequests: number}).totalRequests || 0}</div>
+          <div style="font-size:12px;color:#6b7280;">HTTP Requests</div>
+        </div>
+      </div>
+      ${(summary.content as {wordCount: number}).wordCount < 300 ? `
+      <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px;border-radius:0 8px 8px 0;font-size:13px;">
+        <strong style="color:#92400e;">💡 Tipp:</strong> <span style="color:#78350f;">Google bevorzugt Seiten mit mindestens 300-500 Wörtern. Mehr hochwertiger Content = bessere Rankings!</span>
+      </div>
+      ` : ""}
+    </div>
+
+    <!-- SOCIAL MEDIA & CONTACT - NEW -->
+    <div style="margin-bottom:32px;">
+      <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">📱 Social Media & Kontakt</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        ${Object.keys(summary.socialMedia as Record<string, string>).length > 0 ?
+          Object.entries(summary.socialMedia as Record<string, string>).map(([platform]) => `
+            <span style="background:#d1fae5;color:#065f46;padding:6px 12px;border-radius:6px;font-size:13px;">✓ ${platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+          `).join("") :
+          `<span style="background:#fee2e2;color:#991b1b;padding:6px 12px;border-radius:6px;font-size:13px;">✗ Keine Social Media Links gefunden</span>`
+        }
+      </div>
+      <div style="background:#f9fafb;padding:16px;border-radius:8px;font-size:13px;">
+        <div style="margin-bottom:8px;">
+          <strong>E-Mail auf Website:</strong>
+          ${(summary.contact as {emails: string[]}).emails.length > 0 ?
+            `<span style="color:#10b981;">✓ ${(summary.contact as {emails: string[]}).emails[0]}</span>` :
+            `<span style="color:#ef4444;">✗ Nicht gefunden</span>`}
+        </div>
+        <div style="margin-bottom:8px;">
+          <strong>Telefon auf Website:</strong>
+          ${(summary.contact as {phones: string[]}).phones.length > 0 ?
+            `<span style="color:#10b981;">✓ Gefunden</span>` :
+            `<span style="color:#ef4444;">✗ Nicht gefunden</span>`}
+        </div>
+        <div>
+          <strong>Kontaktformular:</strong>
+          ${(summary.contact as {hasContactForm: boolean}).hasContactForm ?
+            `<span style="color:#10b981;">✓ Vorhanden</span>` :
+            `<span style="color:#f59e0b;">⚠ Nicht gefunden</span>`}
+        </div>
+      </div>
+      ${Object.keys(summary.socialMedia as Record<string, string>).length === 0 ? `
+      <div style="margin-top:12px;background:#fef3c7;border-left:4px solid #f59e0b;padding:12px;border-radius:0 8px 8px 0;font-size:13px;">
+        <strong style="color:#92400e;">💡 Tipp:</strong> <span style="color:#78350f;">Verlinken Sie Ihre Social Media Profile! Das stärkt Ihre Online-Präsenz und hilft Kunden, Sie zu finden.</span>
+      </div>
+      ` : ""}
+    </div>
+
+    <!-- TRACKING & ANALYTICS - NEW -->
+    <div style="margin-bottom:32px;">
+      <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">📊 Tracking & Analytics</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <span style="background:${(summary.tracking as {hasGoogleAnalytics: boolean}).hasGoogleAnalytics ? "#d1fae5" : "#fee2e2"};color:${(summary.tracking as {hasGoogleAnalytics: boolean}).hasGoogleAnalytics ? "#065f46" : "#991b1b"};padding:6px 12px;border-radius:6px;font-size:13px;">
+          ${(summary.tracking as {hasGoogleAnalytics: boolean}).hasGoogleAnalytics ? "✓" : "✗"} Google Analytics
+        </span>
+        <span style="background:${(summary.tracking as {hasGoogleTagManager: boolean}).hasGoogleTagManager ? "#d1fae5" : "#f3f4f6"};color:${(summary.tracking as {hasGoogleTagManager: boolean}).hasGoogleTagManager ? "#065f46" : "#6b7280"};padding:6px 12px;border-radius:6px;font-size:13px;">
+          ${(summary.tracking as {hasGoogleTagManager: boolean}).hasGoogleTagManager ? "✓" : "○"} Tag Manager
+        </span>
+        <span style="background:${(summary.tracking as {hasFacebookPixel: boolean}).hasFacebookPixel ? "#d1fae5" : "#f3f4f6"};color:${(summary.tracking as {hasFacebookPixel: boolean}).hasFacebookPixel ? "#065f46" : "#6b7280"};padding:6px 12px;border-radius:6px;font-size:13px;">
+          ${(summary.tracking as {hasFacebookPixel: boolean}).hasFacebookPixel ? "✓" : "○"} Facebook Pixel
+        </span>
+      </div>
+      ${!(summary.tracking as {hasGoogleAnalytics: boolean}).hasGoogleAnalytics ? `
+      <div style="background:#fee2e2;border-left:4px solid #ef4444;padding:12px;border-radius:0 8px 8px 0;font-size:13px;">
+        <strong style="color:#991b1b;">⚠️ Wichtig:</strong> <span style="color:#7f1d1d;">Sie tracken keine Besucher! Ohne Analytics wissen Sie nicht, woher Ihre Kunden kommen und was sie auf Ihrer Website tun.</span>
+      </div>
+      ` : ""}
+    </div>
+
+    <!-- STRUCTURED DATA - NEW -->
+    <div style="margin-bottom:32px;">
+      <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">🏷️ Strukturierte Daten (Schema.org)</h2>
+      ${(summary.structuredData as {hasStructuredData: boolean}).hasStructuredData ? `
+        <div style="background:#d1fae5;padding:16px;border-radius:8px;font-size:14px;color:#065f46;">
+          <strong>✓ Schema.org Daten gefunden:</strong> ${(summary.structuredData as {types: string[]}).types.join(", ")}
+        </div>
+        <p style="font-size:13px;color:#6b7280;margin:8px 0 0 0;">Strukturierte Daten helfen Google, Ihr Business besser zu verstehen und Rich Snippets in den Suchergebnissen anzuzeigen.</p>
+      ` : `
+        <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:16px;border-radius:0 8px 8px 0;">
+          <strong style="color:#92400e;">✗ Keine strukturierten Daten gefunden</strong>
+          <p style="font-size:13px;color:#78350f;margin:8px 0 0 0;">
+            Mit Schema.org Markup (z.B. LocalBusiness) kann Google Ihre Öffnungszeiten, Adresse und Bewertungen direkt in den Suchergebnissen anzeigen. Das erhöht die Klickrate erheblich!
+          </p>
+        </div>
+      `}
+    </div>
+
+    <!-- TECHNOLOGIES - NEW -->
+    ${(summary.technologies as string[]).length > 0 ? `
+    <div style="margin-bottom:32px;">
+      <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">🛠️ Erkannte Technologien</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${(summary.technologies as string[]).map(tech => `
+          <span style="background:#e0e7ff;color:#3730a3;padding:6px 12px;border-radius:6px;font-size:13px;">${tech}</span>
+        `).join("")}
+      </div>
+    </div>
+    ` : ""}
+
+    <!-- DESIGN ANALYSIS -->
+    ${((summary.design as {colors: string[]; fonts: string[]; hasDarkMode: boolean}).colors.length > 0 || (summary.design as {colors: string[]; fonts: string[]; hasDarkMode: boolean}).fonts.length > 0) ? `
+    <div style="margin-bottom:32px;">
+      <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">🎨 Design-Analyse</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <h4 style="font-size:14px;color:#6b7280;margin:0 0 8px 0;">Farbpalette</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            ${(summary.design as {colors: string[]}).colors.map(color => `
+              <div style="display:flex;align-items:center;gap:6px;background:#f3f4f6;padding:4px 10px;border-radius:6px;">
+                <div style="width:20px;height:20px;border-radius:4px;background:${color};border:1px solid #d1d5db;"></div>
+                <span style="font-size:12px;font-family:monospace;color:#374151;">${color}</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:14px;color:#6b7280;margin:0 0 8px 0;">Schriftarten</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            ${(summary.design as {fonts: string[]}).fonts.map(font => `
+              <span style="background:#fef3c7;color:#92400e;padding:6px 12px;border-radius:6px;font-size:13px;">${font}</span>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+      ${(summary.design as {hasDarkMode: boolean}).hasDarkMode ? `
+        <div style="margin-top:12px;">
+          <span style="background:#374151;color:#ffffff;padding:6px 12px;border-radius:6px;font-size:13px;">🌙 Dark Mode unterstützt</span>
+        </div>
+      ` : ""}
+    </div>
+    ` : ""}
+
+    <!-- BUSINESS FEATURES -->
+    <div style="margin-bottom:32px;">
+      <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">💼 Business-Features</h2>
+      <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;">
+        <div style="background:${(summary.business as {hasOnlineBooking: boolean}).hasOnlineBooking ? "#d1fae5" : "#fee2e2"};padding:12px;border-radius:8px;text-align:center;">
+          <div style="font-size:20px;">${(summary.business as {hasOnlineBooking: boolean}).hasOnlineBooking ? "✅" : "❌"}</div>
+          <div style="font-size:12px;color:${(summary.business as {hasOnlineBooking: boolean}).hasOnlineBooking ? "#065f46" : "#991b1b"};margin-top:4px;">Online-Buchung</div>
+          ${(summary.business as {bookingSystem: string | null}).bookingSystem ? `<div style="font-size:10px;color:#6b7280;margin-top:2px;">${(summary.business as {bookingSystem: string | null}).bookingSystem}</div>` : ""}
+        </div>
+        <div style="background:${(summary.business as {hasGoogleMaps: boolean}).hasGoogleMaps ? "#d1fae5" : "#f3f4f6"};padding:12px;border-radius:8px;text-align:center;">
+          <div style="font-size:20px;">${(summary.business as {hasGoogleMaps: boolean}).hasGoogleMaps ? "✅" : "○"}</div>
+          <div style="font-size:12px;color:${(summary.business as {hasGoogleMaps: boolean}).hasGoogleMaps ? "#065f46" : "#6b7280"};margin-top:4px;">Google Maps</div>
+        </div>
+        <div style="background:${(summary.business as {hasPriceList: boolean}).hasPriceList ? "#d1fae5" : "#f3f4f6"};padding:12px;border-radius:8px;text-align:center;">
+          <div style="font-size:20px;">${(summary.business as {hasPriceList: boolean}).hasPriceList ? "✅" : "○"}</div>
+          <div style="font-size:12px;color:${(summary.business as {hasPriceList: boolean}).hasPriceList ? "#065f46" : "#6b7280"};margin-top:4px;">Preisliste</div>
+        </div>
+        <div style="background:${(summary.business as {hasImpressum: boolean}).hasImpressum && (summary.business as {hasDatenschutz: boolean}).hasDatenschutz ? "#d1fae5" : "#fee2e2"};padding:12px;border-radius:8px;text-align:center;">
+          <div style="font-size:20px;">${(summary.business as {hasImpressum: boolean}).hasImpressum && (summary.business as {hasDatenschutz: boolean}).hasDatenschutz ? "✅" : "⚠️"}</div>
+          <div style="font-size:12px;color:${(summary.business as {hasImpressum: boolean}).hasImpressum && (summary.business as {hasDatenschutz: boolean}).hasDatenschutz ? "#065f46" : "#92400e"};margin-top:4px;">Rechtliches</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:12px;background:#f9fafb;border-radius:8px;">
+        <div style="font-size:13px;color:#374151;">
+          <strong>Rechtliche Seiten:</strong>
+          <span style="margin-left:8px;color:${(summary.business as {hasImpressum: boolean}).hasImpressum ? "#059669" : "#dc2626"};">${(summary.business as {hasImpressum: boolean}).hasImpressum ? "✓" : "✗"} Impressum</span>
+          <span style="margin-left:8px;color:${(summary.business as {hasDatenschutz: boolean}).hasDatenschutz ? "#059669" : "#dc2626"};">${(summary.business as {hasDatenschutz: boolean}).hasDatenschutz ? "✓" : "✗"} Datenschutz</span>
+          <span style="margin-left:8px;color:${(summary.business as {hasAGB: boolean}).hasAGB ? "#059669" : "#6b7280"};">${(summary.business as {hasAGB: boolean}).hasAGB ? "✓" : "○"} AGB</span>
+        </div>
+      </div>
+      ${!(summary.business as {hasOnlineBooking: boolean}).hasOnlineBooking ? `
+        <div style="margin-top:12px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;">
+          <strong style="color:#92400e;">💡 Tipp:</strong>
+          <span style="color:#78350f;font-size:13px;"> Eine Online-Buchungsmöglichkeit kann Ihre Terminanfragen um bis zu 40% steigern!</span>
+        </div>
+      ` : ""}
+    </div>
+
+    <!-- READABILITY SCORE -->
+    <div style="margin-bottom:32px;">
+      <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">📖 Lesbarkeit</h2>
+      <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;">
+        <div style="text-align:center;background:#f9fafb;padding:16px;border-radius:8px;">
+          <div style="font-size:32px;font-weight:700;color:${(summary.readability as {score: number}).score >= 80 ? "#10b981" : (summary.readability as {score: number}).score >= 60 ? "#f59e0b" : "#ef4444"};">${(summary.readability as {score: number}).score}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px;">Lesbarkeits-Score</div>
+          <div style="font-size:14px;font-weight:600;color:#374151;margin-top:2px;">${(summary.readability as {level: string}).level}</div>
+        </div>
+        <div style="text-align:center;background:#f9fafb;padding:16px;border-radius:8px;">
+          <div style="font-size:24px;font-weight:700;color:#6b7280;">${(summary.readability as {avgSentenceLength: number}).avgSentenceLength}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px;">Ø Wörter pro Satz</div>
+          <div style="font-size:11px;color:${(summary.readability as {avgSentenceLength: number}).avgSentenceLength <= 15 ? "#10b981" : (summary.readability as {avgSentenceLength: number}).avgSentenceLength <= 20 ? "#f59e0b" : "#ef4444"};margin-top:2px;">${(summary.readability as {avgSentenceLength: number}).avgSentenceLength <= 15 ? "✓ Optimal" : (summary.readability as {avgSentenceLength: number}).avgSentenceLength <= 20 ? "⚠ OK" : "✗ Zu lang"}</div>
+        </div>
+        <div style="text-align:center;background:#f9fafb;padding:16px;border-radius:8px;">
+          <div style="font-size:24px;font-weight:700;color:#6b7280;">${(summary.readability as {avgWordLength: number}).avgWordLength}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px;">Ø Buchstaben pro Wort</div>
+          <div style="font-size:11px;color:${(summary.readability as {avgWordLength: number}).avgWordLength <= 5 ? "#10b981" : (summary.readability as {avgWordLength: number}).avgWordLength <= 6 ? "#f59e0b" : "#ef4444"};margin-top:2px;">${(summary.readability as {avgWordLength: number}).avgWordLength <= 5 ? "✓ Einfach" : (summary.readability as {avgWordLength: number}).avgWordLength <= 6 ? "⚠ OK" : "✗ Komplex"}</div>
+        </div>
+      </div>
+      ${(summary.readability as {score: number}).score < 70 ? `
+        <div style="margin-top:12px;padding:12px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;">
+          <strong style="color:#92400e;">💡 Verbesserungsvorschlag:</strong>
+          <span style="color:#78350f;font-size:13px;"> Kürzere Sätze und einfachere Wörter verbessern die Lesbarkeit und halten Besucher länger auf Ihrer Seite.</span>
+        </div>
+      ` : ""}
+    </div>
+
     <!-- RECOMMENDATIONS -->
     <div style="margin-bottom:32px;">
       <h2 style="font-size:18px;color:#1f2937;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">🎯 Empfohlene Maßnahmen</h2>
@@ -407,16 +625,89 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
       </ul>
     </div>
 
+    <!-- WAS BEDEUTET DAS FÜR SIE? -->
+    <div style="margin-bottom:32px;background:linear-gradient(135deg,#faf5ff 0%,#fdf2f8 100%);border-radius:16px;padding:24px;border:1px solid #e9d5ff;">
+      <h2 style="font-size:20px;color:#7c3aed;margin:0 0 20px 0;display:flex;align-items:center;gap:8px;">
+        📋 Was bedeutet das für Sie?
+      </h2>
+
+      <div style="font-size:14px;color:#374151;line-height:1.7;">
+        <!-- Performance Erklärung -->
+        <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e9d5ff;">
+          <strong style="color:#7c3aed;">⚡ Ladezeit (Performance ${scores.performance}/100):</strong>
+          <p style="margin:8px 0 0 0;">
+            ${scores.performance >= 80
+              ? "Ihre Website lädt schnell – sehr gut! Besucher können direkt loslegen ohne zu warten."
+              : scores.performance >= 50
+              ? `Ihre Website lädt in normaler Geschwindigkeit. ${safeNumber(performance.lcp) > 2500 ? `Der erste sichtbare Inhalt erscheint nach ca. ${(safeNumber(performance.lcp) / 1000).toFixed(1)} Sekunden.` : ""}`
+              : `Die Ladezeit könnte verbessert werden. ${safeNumber(performance.lcp) > 4000 ? `Aktuell dauert es ca. ${(safeNumber(performance.lcp) / 1000).toFixed(1)} Sekunden bis der Inhalt sichtbar ist.` : ""}`
+            }
+          </p>
+        </div>
+
+        <!-- SEO Erklärung -->
+        <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e9d5ff;">
+          <strong style="color:#7c3aed;">🔍 Google-Sichtbarkeit (SEO ${scores.seo}/100):</strong>
+          <p style="margin:8px 0 0 0;">
+            ${scores.seo >= 80
+              ? "Die technischen SEO-Grundlagen sind gut umgesetzt. Google kann Ihre Seite gut lesen und indexieren."
+              : scores.seo >= 50
+              ? "Die SEO-Grundlagen sind vorhanden. Mit einigen Anpassungen könnte die Sichtbarkeit in Google noch verbessert werden."
+              : "Bei der Suchmaschinenoptimierung gibt es Verbesserungspotenzial. Einige Anpassungen könnten helfen, besser gefunden zu werden."
+            }
+          </p>
+        </div>
+
+        <!-- Zusammenfassung -->
+        <div style="background:#ffffff;border-radius:8px;padding:16px;margin-top:12px;">
+          <strong style="color:#1f2937;">📊 Zusammenfassung:</strong>
+          <p style="margin:12px 0 0 0;">
+            ${scores.performance >= 70 && scores.seo >= 70
+              ? "Ihre Website ist technisch gut aufgestellt. Die Grundlagen stimmen und Besucher finden sich zurecht."
+              : scores.performance >= 50 || scores.seo >= 50
+              ? "Ihre Website funktioniert grundsätzlich. Es gibt einige Bereiche mit Optimierungspotenzial, die bei Interesse verbessert werden könnten."
+              : "Ihre Website hat Potenzial. Mit einigen Anpassungen könnte sie noch besser für Sie arbeiten."
+            }
+            ${(summary.business as {hasOnlineBooking: boolean}).hasOnlineBooking
+              ? " Die Online-Buchung ist ein großer Pluspunkt!"
+              : " Eine Online-Buchung könnte ein hilfreicher Zusatzservice sein."
+            }
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MÖGLICHE VERBESSERUNGEN -->
+    <div style="margin-bottom:32px;background:#f9fafb;border-radius:16px;padding:24px;border:1px solid #e5e7eb;">
+      <h2 style="font-size:18px;color:#374151;margin:0 0 16px 0;">💡 Mögliche Verbesserungen</h2>
+      <p style="font-size:14px;color:#6b7280;margin:0 0 16px 0;">Basierend auf der Analyse gibt es folgende Optimierungsmöglichkeiten:</p>
+      <ul style="margin:0;padding-left:20px;font-size:14px;color:#374151;line-height:1.8;">
+        ${scores.performance < 70 ? "<li>Ladezeit verbessern durch Bildoptimierung und Caching</li>" : ""}
+        ${!(summary.business as {hasImpressum: boolean}).hasImpressum || !(summary.business as {hasDatenschutz: boolean}).hasDatenschutz ? "<li>Impressum und Datenschutzerklärung ergänzen</li>" : ""}
+        ${!(summary.business as {hasOnlineBooking: boolean}).hasOnlineBooking ? "<li>Online-Terminbuchung als zusätzlicher Service</li>" : ""}
+        ${scores.seo < 70 ? "<li>SEO-Grundlagen wie Meta-Beschreibungen optimieren</li>" : ""}
+        ${safeNumber((summary.content as {wordCount: number}).wordCount) < 300 ? "<li>Textinhalte auf der Startseite erweitern</li>" : ""}
+        <li>Regelmäßig Inhalte aktualisieren</li>
+      </ul>
+    </div>
+
     <!-- CONCLUSION -->
     <p style="font-size:15px;color:#4b5563;margin:0;text-align:center;padding:20px 0;border-top:1px solid #e5e7eb;">
       ${aiContent.conclusion}
     </p>
 
     <!-- CTA BUTTON -->
-    <div style="text-align:center;padding:24px 0;margin-top:20px;border-top:1px solid #e5e7eb;">
-      <a href="https://calendly.com/office-arsenio/kosmetikstudio-termin" style="display:inline-block;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:white;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;">
-        Kostenloses Beratungsgespräch vereinbaren
+    <div style="text-align:center;padding:24px 0;margin-top:20px;background:#f9fafb;border-radius:16px;">
+      <p style="margin:0 0 16px 0;font-size:15px;color:#374151;">
+        Haben Sie Fragen zu den Ergebnissen?<br>
+        <span style="font-size:14px;color:#6b7280;">Wir erklären Ihnen gerne alles in einem kurzen Gespräch.</span>
+      </p>
+      <a href="https://calendly.com/office-arsenio/kosmetikstudio-termin" style="display:inline-block;background:linear-gradient(90deg,#ec4899,#8b5cf6);color:white;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:15px;">
+        Gespräch vereinbaren
       </a>
+      <p style="margin:16px 0 0 0;font-size:12px;color:#9ca3af;">
+        Kostenlos & unverbindlich
+      </p>
     </div>
 
   </div>
@@ -497,6 +788,64 @@ export async function generateAnalysisReport(data: AnalysisData): Promise<string
           }
         : null,
       extractedKeywords: data.extractedKeywords?.slice(0, 5) ?? [],
+      // NEW: Additional data for extended report
+      screenshot: data.mobile?.screenshot ?? null,
+      content: {
+        wordCount: data.scraped?.content?.wordCount ?? 0,
+        readingTime: data.scraped?.content?.readingTime ?? 0,
+      },
+      socialMedia: data.scraped?.contact?.socialLinks ?? {},
+      contact: {
+        emails: data.scraped?.contact?.emails ?? [],
+        phones: data.scraped?.contact?.phones ?? [],
+        hasContactForm: data.scraped?.contact?.hasContactForm ?? false,
+      },
+      tracking: {
+        hasGoogleAnalytics: data.scraped?.technical?.hasGoogleAnalytics ?? false,
+        hasGoogleTagManager: data.scraped?.technical?.hasGoogleTagManager ?? false,
+        hasFacebookPixel: data.scraped?.technical?.hasFacebookPixel ?? false,
+        hasHotjar: data.scraped?.technical?.hasHotjar ?? false,
+      },
+      structuredData: {
+        hasStructuredData: data.scraped?.technical?.hasStructuredData ?? false,
+        types: data.scraped?.technical?.structuredDataTypes ?? [],
+      },
+      openGraph: data.scraped?.meta?.ogTags ?? {},
+      technologies: data.scraped?.technical?.detectedTechnologies ?? [],
+      accessibilityDetails: {
+        score: data.mobile?.scores?.accessibility ?? 0,
+        hasSkipLink: data.scraped?.accessibility?.hasSkipLink ?? false,
+        hasMainLandmark: data.scraped?.accessibility?.hasMainLandmark ?? false,
+        hasAriaLabels: data.scraped?.accessibility?.hasAriaLabels ?? false,
+        formsWithoutLabels: data.scraped?.accessibility?.formsWithoutLabels ?? 0,
+      },
+      pageMetrics: {
+        totalSize: data.mobile?.pageMetrics?.totalSize ?? "N/A",
+        totalRequests: data.mobile?.pageMetrics?.totalRequests ?? 0,
+      },
+      // NEW: Design Analysis
+      design: {
+        colors: data.scraped?.design?.colors ?? [],
+        fonts: data.scraped?.design?.fonts ?? [],
+        hasDarkMode: data.scraped?.design?.hasDarkMode ?? false,
+      },
+      // NEW: Business Features
+      business: {
+        hasOnlineBooking: data.scraped?.business?.hasOnlineBooking ?? false,
+        bookingSystem: data.scraped?.business?.bookingSystem ?? null,
+        hasGoogleMaps: data.scraped?.business?.hasGoogleMaps ?? false,
+        hasPriceList: data.scraped?.business?.hasPriceList ?? false,
+        hasImpressum: data.scraped?.business?.hasImpressum ?? false,
+        hasDatenschutz: data.scraped?.business?.hasDatenschutz ?? false,
+        hasAGB: data.scraped?.business?.hasAGB ?? false,
+      },
+      // NEW: Readability Score
+      readability: {
+        avgSentenceLength: data.scraped?.readability?.avgSentenceLength ?? 0,
+        avgWordLength: data.scraped?.readability?.avgWordLength ?? 0,
+        score: data.scraped?.readability?.score ?? 0,
+        level: data.scraped?.readability?.level ?? "N/A",
+      },
     };
 
     console.log("=== REPORT DEBUG ===");

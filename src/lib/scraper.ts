@@ -94,6 +94,29 @@ export interface ScrapedData {
     estimatedDomSize: number;
     iframeCount: number;
   };
+  // NEW: Design Analysis
+  design: {
+    colors: string[];
+    fonts: string[];
+    hasDarkMode: boolean;
+  };
+  // NEW: Business Features
+  business: {
+    hasOnlineBooking: boolean;
+    bookingSystem: string | null;
+    hasGoogleMaps: boolean;
+    hasPriceList: boolean;
+    hasImpressum: boolean;
+    hasDatenschutz: boolean;
+    hasAGB: boolean;
+  };
+  // NEW: Content Quality
+  readability: {
+    avgSentenceLength: number;
+    avgWordLength: number;
+    score: number; // 0-100, higher is easier to read
+    level: string; // "Einfach", "Mittel", "Komplex"
+  };
 }
 
 export interface RobotsSitemapResult {
@@ -435,6 +458,200 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
   const estimatedDomSize = $("*").length;
   const iframeCount = $("iframe").length;
 
+  // ============================================
+  // NEW: Design Analysis - Colors & Fonts
+  // ============================================
+
+  // Helper: Check if color is a boring utility color (white, black, gray)
+  const isBoringColor = (hex: string): boolean => {
+    const h = hex.toLowerCase().replace('#', '');
+    // Expand 3-char to 6-char
+    const full = h.length === 3 ? h[0]+h[0]+h[1]+h[1]+h[2]+h[2] : h;
+    const r = parseInt(full.slice(0,2), 16);
+    const g = parseInt(full.slice(2,4), 16);
+    const b = parseInt(full.slice(4,6), 16);
+
+    // Pure white/black
+    if ((r > 250 && g > 250 && b > 250) || (r < 5 && g < 5 && b < 5)) return true;
+    // Grays (r ≈ g ≈ b)
+    const diff = Math.max(r,g,b) - Math.min(r,g,b);
+    if (diff < 20 && r > 30 && r < 230) return true;
+    // Near-white
+    if (r > 240 && g > 240 && b > 240) return true;
+    // Near-black
+    if (r < 15 && g < 15 && b < 15) return true;
+
+    return false;
+  };
+
+  // Count color occurrences to find main colors
+  const colorCounts: Map<string, number> = new Map();
+
+  // Extract colors from inline styles and CSS
+  const colorMatches = html.match(/#[0-9A-Fa-f]{3,6}/g) || [];
+  colorMatches.forEach(color => {
+    const normalized = color.toLowerCase();
+    // Skip very short or invalid
+    if (normalized.length < 4) return;
+    // Normalize 3-char to 6-char for comparison
+    const full = normalized.length === 4
+      ? '#' + normalized[1]+normalized[1]+normalized[2]+normalized[2]+normalized[3]+normalized[3]
+      : normalized;
+
+    if (!isBoringColor(full)) {
+      colorCounts.set(full, (colorCounts.get(full) || 0) + 1);
+    }
+  });
+
+  // Also look for colors in important places (buttons, links, brand elements)
+  const brandColorPatterns = [
+    /\.btn[^{]*\{[^}]*(?:background|color):\s*(#[0-9A-Fa-f]{3,6})/gi,
+    /\.button[^{]*\{[^}]*(?:background|color):\s*(#[0-9A-Fa-f]{3,6})/gi,
+    /a\s*\{[^}]*color:\s*(#[0-9A-Fa-f]{3,6})/gi,
+    /\.primary[^{]*\{[^}]*(?:background|color):\s*(#[0-9A-Fa-f]{3,6})/gi,
+    /\.accent[^{]*\{[^}]*(?:background|color):\s*(#[0-9A-Fa-f]{3,6})/gi,
+    /--primary[^:]*:\s*(#[0-9A-Fa-f]{3,6})/gi,
+    /--accent[^:]*:\s*(#[0-9A-Fa-f]{3,6})/gi,
+    /--brand[^:]*:\s*(#[0-9A-Fa-f]{3,6})/gi,
+  ];
+
+  brandColorPatterns.forEach(pattern => {
+    const matches = html.matchAll(pattern);
+    for (const match of matches) {
+      if (match[1]) {
+        const color = match[1].toLowerCase();
+        if (!isBoringColor(color)) {
+          // Brand colors get extra weight
+          colorCounts.set(color, (colorCounts.get(color) || 0) + 10);
+        }
+      }
+    }
+  });
+
+  // Sort by frequency and take top colors
+  const sortedColors = [...colorCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([color]) => color);
+
+  const extractedColors = new Set(sortedColors.slice(0, 10));
+
+  // Extract fonts
+  const extractedFonts: Set<string> = new Set();
+  const fontMatches = html.match(/font-family:\s*['"]?([^'";,}]+)/gi) || [];
+  fontMatches.forEach(match => {
+    const font = match.replace(/font-family:\s*['"]?/i, "").trim();
+    if (font && !font.includes("{") && font.length < 50) {
+      extractedFonts.add(font);
+    }
+  });
+
+  // Check for Google Fonts
+  $('link[href*="fonts.googleapis.com"]').each((_, el) => {
+    const href = $(el).attr("href") || "";
+    const familyMatch = href.match(/family=([^&:]+)/);
+    if (familyMatch) {
+      familyMatch[1].split("|").forEach(f => extractedFonts.add(f.replace(/\+/g, " ")));
+    }
+  });
+
+  // Dark mode detection
+  const hasDarkMode = html.includes("dark-mode") ||
+    html.includes("dark-theme") ||
+    html.includes('prefers-color-scheme') ||
+    html.includes("theme-dark");
+
+  // ============================================
+  // NEW: Business Features
+  // ============================================
+
+  // Online Booking Detection
+  let hasOnlineBooking = false;
+  let bookingSystem: string | null = null;
+
+  const bookingSystems: Record<string, RegExp> = {
+    "Calendly": /calendly\.com/i,
+    "Booksy": /booksy\.com/i,
+    "Treatwell": /treatwell/i,
+    "Shore": /shore\.com/i,
+    "SimplyBook": /simplybook/i,
+    "Acuity": /acuityscheduling/i,
+    "Square Appointments": /squareup.*appointment/i,
+    "Timify": /timify/i,
+    "Terminland": /terminland/i,
+    "Doctolib": /doctolib/i,
+  };
+
+  for (const [name, pattern] of Object.entries(bookingSystems)) {
+    if (pattern.test(html)) {
+      hasOnlineBooking = true;
+      bookingSystem = name;
+      break;
+    }
+  }
+
+  // Also check for generic booking buttons
+  if (!hasOnlineBooking) {
+    const hasBookingButton = $('a, button').filter((_, el) => {
+      const text = $(el).text().toLowerCase();
+      return text.includes("termin") || text.includes("buchen") || text.includes("reserv") || text.includes("book");
+    }).length > 0;
+    if (hasBookingButton) hasOnlineBooking = true;
+  }
+
+  // Google Maps Detection
+  const hasGoogleMaps = html.includes("maps.google") ||
+    html.includes("google.com/maps") ||
+    html.includes("maps.googleapis.com") ||
+    $('iframe[src*="google.com/maps"]').length > 0;
+
+  // Price List Detection
+  const hasPriceList = html.toLowerCase().includes("preis") &&
+    (html.includes("€") || html.includes("EUR") || html.toLowerCase().includes("euro")) ||
+    $('*').filter((_, el) => {
+      const text = $(el).text().toLowerCase();
+      return (text.includes("preisliste") || text.includes("preise") || text.includes("tarife"));
+    }).length > 0;
+
+  // Legal Pages Detection - check links AND raw HTML
+  const htmlLower = html.toLowerCase();
+
+  const hasImpressum = allLinks.some(l =>
+    l.href.toLowerCase().includes("impressum") ||
+    l.text.toLowerCase().includes("impressum")
+  ) || (htmlLower.includes("impressum") && (htmlLower.includes('href') || $('*:contains("Impressum")').length > 0));
+
+  const hasDatenschutz = allLinks.some(l =>
+    l.href.toLowerCase().includes("datenschutz") ||
+    l.href.toLowerCase().includes("privacy") ||
+    l.text.toLowerCase().includes("datenschutz")
+  ) || (htmlLower.includes("datenschutz") || htmlLower.includes("privacy-policy") || htmlLower.includes("privacypolicy"));
+
+  const hasAGB = allLinks.some(l =>
+    l.href.toLowerCase().includes("agb") ||
+    l.text.toLowerCase().includes("agb") ||
+    l.text.toLowerCase().includes("geschäftsbedingungen")
+  ) || htmlLower.includes("/agb") || htmlLower.includes("allgemeine geschäftsbedingungen");
+
+  // ============================================
+  // NEW: Readability Score (Flesch-like)
+  // ============================================
+  const sentences = textContent.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const words = textContent.split(/\s+/).filter(w => w.length > 0);
+  const avgSentenceLength = sentences.length > 0 ? Math.round(words.length / sentences.length) : 0;
+  const avgWordLength = words.length > 0 ?
+    Math.round(words.reduce((sum, w) => sum + w.length, 0) / words.length * 10) / 10 : 0;
+
+  // Simple readability score (higher = easier to read)
+  // Based on average sentence length and word length
+  let readabilityScore = 100;
+  if (avgSentenceLength > 20) readabilityScore -= (avgSentenceLength - 20) * 2;
+  if (avgWordLength > 6) readabilityScore -= (avgWordLength - 6) * 10;
+  readabilityScore = Math.max(0, Math.min(100, Math.round(readabilityScore)));
+
+  let readabilityLevel = "Einfach";
+  if (readabilityScore < 60) readabilityLevel = "Komplex";
+  else if (readabilityScore < 80) readabilityLevel = "Mittel";
+
   return {
     meta: {
       title,
@@ -521,6 +738,26 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
       hasDnsPrefetch,
       estimatedDomSize,
       iframeCount,
+    },
+    design: {
+      colors: [...extractedColors].slice(0, 10),
+      fonts: [...extractedFonts].slice(0, 5),
+      hasDarkMode,
+    },
+    business: {
+      hasOnlineBooking,
+      bookingSystem,
+      hasGoogleMaps,
+      hasPriceList,
+      hasImpressum,
+      hasDatenschutz,
+      hasAGB,
+    },
+    readability: {
+      avgSentenceLength,
+      avgWordLength,
+      score: readabilityScore,
+      level: readabilityLevel,
     },
   };
 }
@@ -800,6 +1037,26 @@ function getDefaultScrapedData(url: string): ScrapedData {
       hasDnsPrefetch: false,
       estimatedDomSize: 0,
       iframeCount: 0,
+    },
+    design: {
+      colors: [],
+      fonts: [],
+      hasDarkMode: false,
+    },
+    business: {
+      hasOnlineBooking: false,
+      bookingSystem: null,
+      hasGoogleMaps: false,
+      hasPriceList: false,
+      hasImpressum: false,
+      hasDatenschutz: false,
+      hasAGB: false,
+    },
+    readability: {
+      avgSentenceLength: 0,
+      avgWordLength: 0,
+      score: 0,
+      level: "N/A",
     },
   };
 }

@@ -3,6 +3,17 @@ import { db } from "@/lib/turso";
 import { leads, analysisResults } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+// CORS headers for widget
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 const statusSteps: Record<string, { step: number; label: string }> = {
   queued: { step: 0, label: "In Warteschlange..." },
   analyzing_performance: { step: 1, label: "Performance wird analysiert..." },
@@ -35,7 +46,7 @@ export async function GET(
       .limit(1);
 
     if (leadData.length === 0) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: "Not found" }, { status: 404, headers: corsHeaders });
     }
 
     const lead = leadData[0] as { id: string; firstName: string; email: string; websiteUrl: string; status: string | null };
@@ -81,6 +92,7 @@ export async function GET(
       firstName: lead.firstName,
     }, {
       headers: {
+        ...corsHeaders,
         'Cache-Control': 'no-store, no-cache, must-revalidate',
         'Pragma': 'no-cache',
       }
@@ -89,7 +101,7 @@ export async function GET(
     console.error("Status check error:", error);
     return NextResponse.json(
       { error: "Fehler beim Abrufen des Status" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

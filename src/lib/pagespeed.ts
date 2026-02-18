@@ -13,11 +13,11 @@ export interface PageSpeedResult {
     bestPractices: number;
   };
   coreWebVitals: {
-    lcp: string;
-    fcp: string;
-    cls: string;
-    tbt: string;
-    speedIndex: string;
+    lcp: number;  // in milliseconds
+    fcp: number;  // in milliseconds
+    cls: number;  // unitless (0-1 typically)
+    tbt: number;  // in milliseconds
+    speedIndex: number;  // in milliseconds
   };
   pageMetrics: {
     totalSize: string;
@@ -168,20 +168,21 @@ export async function runPageSpeedAnalysis(
         ),
       },
       coreWebVitals: {
+        // Use numericValue (in ms) for calculations, with display fallback
         lcp: safeGet(
-          () => audits["largest-contentful-paint"].displayValue,
-          "N/A"
+          () => Math.round(audits["largest-contentful-paint"].numericValue),
+          0
         ),
         fcp: safeGet(
-          () => audits["first-contentful-paint"].displayValue,
-          "N/A"
+          () => Math.round(audits["first-contentful-paint"].numericValue),
+          0
         ),
         cls: safeGet(
-          () => audits["cumulative-layout-shift"].displayValue,
-          "N/A"
+          () => audits["cumulative-layout-shift"].numericValue,
+          0
         ),
-        tbt: safeGet(() => audits["total-blocking-time"].displayValue, "N/A"),
-        speedIndex: safeGet(() => audits["speed-index"].displayValue, "N/A"),
+        tbt: safeGet(() => Math.round(audits["total-blocking-time"].numericValue), 0),
+        speedIndex: safeGet(() => Math.round(audits["speed-index"].numericValue), 0),
       },
       pageMetrics: {
         totalSize: safeGet(

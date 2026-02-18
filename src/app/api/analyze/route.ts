@@ -9,6 +9,18 @@ import { eq } from "drizzle-orm";
 
 export const maxDuration = 60; // Vercel timeout auf 60 Sekunden
 
+// CORS headers for widget embedding
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// Handle preflight requests
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 interface AnalyzeRequest {
   firstName: string;
   email: string;
@@ -31,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (!body.firstName || !body.email || !body.websiteUrl) {
       return NextResponse.json(
         { error: "Alle Felder sind erforderlich" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -191,7 +203,7 @@ export async function POST(request: NextRequest) {
         seo: pageSpeedResults.mobile.scores.seo,
         accessibility: pageSpeedResults.mobile.scores.accessibility,
       },
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error("Analysis error:", error);
 
@@ -203,7 +215,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "Ein unbekannter Fehler ist aufgetreten",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

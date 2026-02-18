@@ -15,6 +15,17 @@ import { eq } from "drizzle-orm";
 
 export const maxDuration = 120; // 2 Minuten für umfangreiche Analyse
 
+// CORS headers for widget
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 async function updateLeadStatus(leadId: string, status: string) {
   await db.update(leads).set({ status }).where(eq(leads.id, leadId));
 }
@@ -27,7 +38,7 @@ export async function POST(request: NextRequest) {
     leadId = body.leadId;
 
     if (!leadId) {
-      return NextResponse.json({ error: "Lead ID required" }, { status: 400 });
+      return NextResponse.json({ error: "Lead ID required" }, { status: 400, headers: corsHeaders });
     }
 
     // Get lead data
@@ -44,7 +55,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (leadData.length === 0) {
-      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+      return NextResponse.json({ error: "Lead not found" }, { status: 404, headers: corsHeaders });
     }
 
     const lead = leadData[0] as {
@@ -54,6 +65,17 @@ export async function POST(request: NextRequest) {
       websiteUrl: string;
       status: string | null;
     };
+
+    // Prevent duplicate processing - only process if status is "queued"
+    if (lead.status && lead.status !== "queued") {
+      console.log(`[${leadId}] Already processing or completed (status: ${lead.status}), skipping`);
+      return NextResponse.json({
+        success: true,
+        message: "Already processing",
+        status: lead.status
+      }, { headers: corsHeaders });
+    }
+
     const websiteUrl = lead.websiteUrl;
 
     console.log(`[${leadId}] Starting comprehensive analysis for ${websiteUrl}`);
@@ -239,7 +261,7 @@ export async function POST(request: NextRequest) {
         security: securityHeaders.score,
       },
       hasDataForSEO: !!seoAnalysis,
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error(`[${leadId}] Analysis error:`, error);
 
@@ -252,7 +274,7 @@ export async function POST(request: NextRequest) {
         error: "Analyse fehlgeschlagen",
         message: error instanceof Error ? error.message : "Unbekannter Fehler",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
