@@ -330,8 +330,12 @@ export async function getRankedKeywords(domain: string, limit: number = 20): Pro
     return [];
   }
 
+  console.log(`[DataForSEO getRankedKeywords] ===========================`);
+  console.log(`[DataForSEO getRankedKeywords] Input domain: "${domain}"`);
+  console.log(`[DataForSEO getRankedKeywords] Limit: ${limit}`);
+
   try {
-    const response = await apiRequest<{tasks: Array<{result: Array<{items: unknown[]}>}>}>("/dataforseo_labs/google/ranked_keywords/live", [{
+    const requestBody = [{
       target: domain,
       location_code: 2040, // Austria
       language_code: "de",
@@ -340,17 +344,33 @@ export async function getRankedKeywords(domain: string, limit: number = 20): Pro
       filters: [
         ["ranked_serp_element.serp_item.rank_absolute", "<=", 100]
       ],
-    }]);
+    }];
 
-    const items = response.tasks?.[0]?.result?.[0]?.items || [];
+    console.log(`[DataForSEO getRankedKeywords] Request body:`, JSON.stringify(requestBody));
 
-    return items.map((item: any) => ({
+    const response = await apiRequest<{tasks: Array<{result: Array<{items: unknown[]; target?: string; se_domain?: string}>}>}>("/dataforseo_labs/google/ranked_keywords/live", requestBody);
+
+    const result = response.tasks?.[0]?.result?.[0];
+    const items = result?.items || [];
+
+    // Log the target that DataForSEO actually used
+    console.log(`[DataForSEO getRankedKeywords] Response target domain: "${result?.target || 'N/A'}"`);
+    console.log(`[DataForSEO getRankedKeywords] Response se_domain: "${result?.se_domain || 'N/A'}"`);
+    console.log(`[DataForSEO getRankedKeywords] Response items count: ${items.length}`);
+    console.log(`[DataForSEO getRankedKeywords] First 3 raw items:`, JSON.stringify(items.slice(0, 3), null, 2));
+
+    const results = items.map((item: any) => ({
       keyword: item.keyword_data?.keyword || "",
       position: item.ranked_serp_element?.serp_item?.rank_absolute || null,
       url: item.ranked_serp_element?.serp_item?.url || null,
       title: item.ranked_serp_element?.serp_item?.title || null,
       searchVolume: item.keyword_data?.keyword_info?.search_volume || 0,
     }));
+
+    console.log(`[DataForSEO getRankedKeywords] Parsed results:`, JSON.stringify(results.slice(0, 5)));
+    console.log(`[DataForSEO getRankedKeywords] ===========================`);
+
+    return results;
   } catch (error) {
     console.error("Ranked Keywords Error:", error);
     return [];

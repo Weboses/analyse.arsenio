@@ -78,6 +78,13 @@ function getPriorityColor(priority: string): { bg: string; border: string; text:
   }
 }
 
+// Safe number conversion - handles null, undefined, strings, NaN
+function safeNumber(value: unknown, fallback: number = 0): number {
+  if (value === null || value === undefined) return fallback;
+  const num = Number(value);
+  return isNaN(num) ? fallback : num;
+}
+
 async function generateAIContent(data: AnalysisData, summary: Record<string, unknown>): Promise<AIContent> {
   const prompt = `Du bist ein erfahrener SEO-Berater. Analysiere diese Website-Daten und erstelle personalisierte Texte.
 
@@ -301,15 +308,15 @@ function buildHTMLReport(data: AnalysisData, aiContent: AIContent, summary: Reco
       <div style="display:flex;flex-wrap:wrap;gap:12px;">
         <div style="flex:1;min-width:120px;background:#f9fafb;padding:12px;border-radius:8px;text-align:center;">
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">LCP</div>
-          <div style="font-size:18px;font-weight:600;color:${Number(performance.lcp ?? 0) <= 2500 ? "#10b981" : Number(performance.lcp ?? 0) <= 4000 ? "#f59e0b" : "#ef4444"};">${(Number(performance.lcp ?? 0) / 1000).toFixed(1)}s</div>
+          <div style="font-size:18px;font-weight:600;color:${safeNumber(performance.lcp) <= 2500 ? "#10b981" : safeNumber(performance.lcp) <= 4000 ? "#f59e0b" : "#ef4444"};">${(safeNumber(performance.lcp) / 1000).toFixed(1)}s</div>
         </div>
         <div style="flex:1;min-width:120px;background:#f9fafb;padding:12px;border-radius:8px;text-align:center;">
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">FCP</div>
-          <div style="font-size:18px;font-weight:600;color:${Number(performance.fcp ?? 0) <= 1800 ? "#10b981" : Number(performance.fcp ?? 0) <= 3000 ? "#f59e0b" : "#ef4444"};">${(Number(performance.fcp ?? 0) / 1000).toFixed(1)}s</div>
+          <div style="font-size:18px;font-weight:600;color:${safeNumber(performance.fcp) <= 1800 ? "#10b981" : safeNumber(performance.fcp) <= 3000 ? "#f59e0b" : "#ef4444"};">${(safeNumber(performance.fcp) / 1000).toFixed(1)}s</div>
         </div>
         <div style="flex:1;min-width:120px;background:#f9fafb;padding:12px;border-radius:8px;text-align:center;">
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">CLS</div>
-          <div style="font-size:18px;font-weight:600;color:${Number(performance.cls ?? 0) <= 0.1 ? "#10b981" : Number(performance.cls ?? 0) <= 0.25 ? "#f59e0b" : "#ef4444"};">${Number(performance.cls ?? 0).toFixed(3)}</div>
+          <div style="font-size:18px;font-weight:600;color:${safeNumber(performance.cls) <= 0.1 ? "#10b981" : safeNumber(performance.cls) <= 0.25 ? "#f59e0b" : "#ef4444"};">${safeNumber(performance.cls).toFixed(3)}</div>
         </div>
         <div style="flex:1;min-width:120px;background:#f9fafb;padding:12px;border-radius:8px;text-align:center;">
           <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Mobile</div>

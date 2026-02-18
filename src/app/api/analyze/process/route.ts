@@ -91,10 +91,13 @@ export async function POST(request: NextRequest) {
     let seoAnalysis: ComprehensiveAnalysis | null = null;
     if (isDataForSEOConfigured()) {
       console.log(`[${leadId}] DataForSEO is configured - running comprehensive analysis...`);
+      console.log(`[${leadId}] Passing URL to DataForSEO: "${websiteUrl}"`);
       try {
         seoAnalysis = await runComprehensiveAnalysis(websiteUrl, extractedKeywords);
         console.log(`[${leadId}] DataForSEO analysis complete:`, {
+          analyzedDomain: seoAnalysis.domain,
           rankings: seoAnalysis.rankings.length,
+          topKeywords: seoAnalysis.rankings.slice(0, 3).map(r => r.keyword),
           backlinks: seoAnalysis.backlinks.totalBacklinks,
           competitors: seoAnalysis.competitors.length,
         });
